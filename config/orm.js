@@ -1,6 +1,6 @@
-var connection = require("../config/connection");
+var connection = require("../config/connection.js");
 
-function createQmarks(num) {
+function printQuestionMarks(num) {
   var arr = [];
   for (var i = 0; i < num; i++) {
     arr.push("?");
@@ -8,78 +8,92 @@ function createQmarks(num) {
   return arr.toString();
 }
 
-function translateSql(ob) {
+// Helper function to convert object key/value pairs to SQL syntax
+function objToSql(ob) {
   var arr = [];
+
+  // loop through the keys and push the key/value as a string int arr
   for (var key in ob) {
     var value = ob[key];
+  
     if (Object.hasOwnProperty.call(ob, key)) {
+      // if string with spaces, add quotations (Lana Del Grey => 'Lana Del Grey')
       if (typeof value === "string" && value.indexOf(" ") >= 0) {
         value = "'" + value + "'";
       }
       arr.push(key + "=" + value);
     }
   }
+
+  // translate array of strings to a single comma-separated string
   return arr.toString();
 }
 
+// Object for all our SQL statement functions
 var orm = {
-  selectAll: function(table, cb) {
-    var dbQuery = "SELECT * FROM " + table + ";";
-
-    connection.query(dbQuery, function(err, res) {
+  selectAll: function (tableInput, cb) {
+    var queryString = "SELECT * FROM " + tableInput + ";";
+    connection.query(queryString, function (err, result) {
       if (err) {
         throw err;
       }
-      cb(res);
+      //uses a cb to pass the result into the next file in the file system (burger.js)
+      cb(result);
     });
   },
-  insertOne: function(table, cols, vals, cb) {
-    var dbQuery =
-      "INSERT INTO " +
-      table +
-      " (" +
-      cols.toString() +
-      ") " +
-      "VALUES (" +
-      createQmarks(vals.length) +
-      ") ";
+  // Vals is an array of values that we want to save to cols
+  // Cols are the columns we want to insert the values into
+  insertOne: function (table, cols, vals, cb) {
+    var queryString = "INSERT INTO " + table;
 
-    console.log(dbQuery);
-    connection.query(dbQuery, vals, function(err, res) {
+    queryString += " (";
+    queryString += cols.toString();
+    queryString += ") ";
+    queryString += "VALUES (";
+    queryString += printQuestionMarks(vals.length);
+    queryString += ") ";
+
+    console.log(queryString);
+    connection.query(queryString, vals, function (err, result) {
       if (err) {
         throw err;
       }
-      cb(res);
+
+      cb(result);
     });
   },
-  updateOne: function(table, objColVals, condition, cb) {
-    var dbQuery =
-      "UPDATE " +
-      table +
-      " SET " +
-      translateSql(objColVals) +
-      " WHERE " +
-      condition;
+  // ObtColVals would be the colums and values that you want to update
+  // An example of objColVals would be {name: panther, sleepy: true}
+  // The condition is what burger we're updating/devouring
+  updateOne: function (table, objColVals, condition, cb) {
+    var queryString = "UPDATE " + table;
 
-    console.log(dbQuery);
+    queryString += " SET ";
+    queryString += objToSql(objColVals);
+    queryString += " WHERE ";
+    queryString += condition;
 
-    connection.query(dbQuery, function(err, res) {
+    console.log(queryString);
+    connection.query(queryString, function (err, result) {
       if (err) {
         throw err;
       }
-      cb(res);
+
+      cb(result);
     });
   },
-  deleteOne: function(table, condition, cb) {
-    var dbQuery = "DELETE FROM " + table + " WHERE " + condition;
-    console.log(dbQuery);
 
-    connection.query(dbQuery, function(err, res) {
+  deleteAll: function (tableInput, cb) {
+    var queryString = 'DELETE FROM ' + tableInput;
+    connection.query(queryString, function (err, result) {
       if (err) {
         throw err;
       }
-      cb(res);
+      //uses a cb to pass the result into the next file in the file system (burger.js)
+      cb(result);
     });
   }
 };
+
+// Export the orm object for the model (burger.js).
 module.exports = orm;

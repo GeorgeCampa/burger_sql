@@ -1,52 +1,48 @@
 var express = require("express");
-var burger = require("../models/burger");
-
 var router = express.Router();
+var burger = require("../models/burger.js");
+
 
 router.get("/", function (req, res) {
+    //Pass the burger data into the function
     burger.selectAll(function (data) {
-        var hdbrsObj = {
+        var hbsObject = {
             burgers: data
         };
-        console.log(hdbrsObj);
-        res.render("index", hdbrsObj);
-    });
-
-    router.post("/api/burgers", function (req, res) {
-        burger.insertOne(
-            ["burger_name", "devoured"],
-            [req.body.burger_name, req.body.devoured],
-            function (result) {
-                
-                res.json({ id: result.insertId });
-            }
-        );
-    });
-    router.put("/api/burgers/:id", function (req, res) {
-        var condition = "id = " + req.params.id;
-
-        console.log("condition", condition);
-        burger.updateOne({ devoured: req.body.devoured }, condition, function (
-            result
-        ) {
-            if (result.changedRows === 0) {
-                return res.status(404).end();
-            } else {
-                res.status(200).end();
-            }
-        });
-    });
-    router.delete("/api/burgers/:id", function (req, res) {
-        var condition = "id = " + req.params.id;
-        console.log("condition", condition);
-
-        burger.deleteOne(condition, function (result) {
-            if (result.changedRows === 0) {
-                return res.status(404).end();
-            } else {
-                res.status(200).end();
-            }
-        });
+        console.log(hbsObject);
+        res.render("index", hbsObject);
     });
 });
+
+router.post("/burgers/insertOne", function (req, res) {
+    burger.insertOne([
+        "burger_name"
+    ], [
+            req.body.burger_name
+        ], function (data) {
+            res.redirect('/');
+        });
+});
+
+router.put("/burgers/updateOne/:id", function (req, res) {
+    var condition = "id = " + req.params.id;
+    burger.updateOne({
+        devoured: true
+    }, condition, function (data) {
+        res.redirect('/');
+    });
+});
+
+router.delete("/burgers/deleteAll/", function (req, res) {
+    burger.deleteAll(function (data) {
+        var hbsObject = {
+            burgers: data
+        };
+        console.log(hbsObject);
+        res.redirect('/');
+    });
+});
+
+
+// Export routes for server.js to use.
 module.exports = router;
